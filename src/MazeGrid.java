@@ -22,7 +22,7 @@ public class MazeGrid extends Canvas {
         if (mark == true) {
             this.setBackground(new Color(255, 255, 255)); //通路(mark=true) ：白色
         } else {
-            this.setBackground(new Color(120, 0, 0));     //墙壁(mark=false) ：白色
+            this.setBackground(new Color(120, 0, 0));     //墙壁(mark=false) ：红色
         }
     }
 

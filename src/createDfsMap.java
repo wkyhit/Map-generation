@@ -7,8 +7,8 @@ import java.util.List;
 
 public class createDfsMap {
 
-    private int rows = 25;// rows 和cols目前暂定只能是奇数
-    private int cols = 25;
+    private int rows;// rows 和cols目前暂定只能是奇数
+    private int cols;
     private List<String> willVisit; //保存待访问的当前块的邻接块
     private List<String> visited;   //保存图中所有已访问过块
     private MazeGrid grid[][];

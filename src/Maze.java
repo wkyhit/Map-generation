@@ -28,6 +28,7 @@ public class Maze extends JFrame implements ActionListener {
     private List<String> willVisit; //保存待访问的当前块的邻接块
     private List<String> visited;   //保存图中所有已访问过块
     private LinkedList<String> comed;
+    private List<String> wallList; //prim算法墙链
     private long startTime;
     private long endTime;
 
@@ -37,6 +38,7 @@ public class Maze extends JFrame implements ActionListener {
         willVisit = new ArrayList<String>();
         visited = new ArrayList<String>();
         comed = new LinkedList<String>();
+        wallList = new LinkedList<String>();
         init();
         this.setTitle("回溯法--走迷宫");
         this.add(panel);
@@ -81,12 +83,16 @@ public class Maze extends JFrame implements ActionListener {
         //初始化出口
         grid[rows - 1][cols - 1].setEnd(true);
 
-        /*DFS生成迷宫*/
-        createDfsMap dfsMap = new createDfsMap();//生成dfs对象
-        dfsMap.SetProperty(rows, cols, willVisit, visited, grid);//把属性传入
-        //从grid[0][0]开始递归生成迷宫
-        grid = dfsMap.generateMap();//生成迷宫
-        /*DFS生成迷宫*/
+//        /*DFS生成迷宫*/
+//        createDfsMap dfsMap = new createDfsMap();//生成dfs对象
+//        dfsMap.SetProperty(rows, cols, willVisit, visited, grid);//把属性传入
+//        //从grid[0][0]开始递归生成迷宫
+//        grid = dfsMap.generateMap();//生成迷宫
+//        /*DFS生成迷宫*/
+
+        creatPrimMap primMap = new creatPrimMap();
+        primMap.SetProperty(rows, cols, wallList, grid);
+        grid = primMap.generateMap();
 
         for (MazeGrid[] mazeGrids : grid) { //foreach 以每行遍历
             for (int j = 0; j < mazeGrids.length; j++) { //依次遍历每行各个方块
