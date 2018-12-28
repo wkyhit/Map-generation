@@ -3,8 +3,8 @@ import java.util.List;
 public class creatPrimMap {
     private int rows;
     private int cols;
-    private List<String> willVisit; //保存待访问的当前通路集合的邻接白块
-    private List<String> visitedset;   //通路集合
+    //    private List<String> willVisit; //保存待访问的当前通路集合的邻接白块
+//    private List<String> visitedset;   //通路集合
     private List<String> wallList;
     private MazeGrid grid[][];
 
@@ -119,6 +119,5 @@ public class creatPrimMap {
 
         return mazeGrid;
     }
-
 
 }

@@ -83,16 +83,25 @@ public class Maze extends JFrame implements ActionListener {
         //初始化出口
         grid[rows - 1][cols - 1].setEnd(true);
 
-//        /*DFS生成迷宫*/
-//        createDfsMap dfsMap = new createDfsMap();//生成dfs对象
-//        dfsMap.SetProperty(rows, cols, willVisit, visited, grid);//把属性传入
-//        //从grid[0][0]开始递归生成迷宫
-//        grid = dfsMap.generateMap();//生成迷宫
-//        /*DFS生成迷宫*/
+        //从grid[0][0]开始递归生成迷宫
 
-        creatPrimMap primMap = new creatPrimMap();
-        primMap.SetProperty(rows, cols, wallList, grid);
-        grid = primMap.generateMap();
+//        /*DFS生成迷宫*/
+        createDfsMap dfsMap = new createDfsMap();//生成dfs对象
+        dfsMap.SetProperty(rows, cols, willVisit, visited, grid);//把属性传入
+        grid = dfsMap.generateMap();//生成迷宫
+        /*DFS生成迷宫*/
+
+//        /*Prim生成迷宫*/
+//        creatPrimMap primMap = new creatPrimMap();
+//        primMap.SetProperty(rows, cols, wallList, grid);
+//        grid = primMap.generateMap();
+        /*Prim生成迷宫*/
+
+//        /*Eller生成迷宫*/
+//        CreateEllerMap ellerMap = new CreateEllerMap();
+//        ellerMap.SetProperty(rows,cols,willVisit,visited,grid);
+//        grid = ellerMap.generateMap();
+//        /*Eller生成迷宫*/
 
         for (MazeGrid[] mazeGrids : grid) { //foreach 以每行遍历
             for (int j = 0; j < mazeGrids.length; j++) { //依次遍历每行各个方块
@@ -230,7 +239,7 @@ public class Maze extends JFrame implements ActionListener {
         } else if (e.getActionCommand().equals("start to explore")) {
             startTime = System.currentTimeMillis();
             start.setVisible(false);
-            restart.setText("禁止刷新");
+            restart.setText("prohibit to refresh");
             int delay = 50; //former:1000
             int period = 25;// former:500 循环间隔
             java.util.Timer timer = new java.util.Timer();
