@@ -20,9 +20,17 @@ public class Maze extends JFrame implements ActionListener {
     private JPanel panel;
     private JPanel controlPanel;//control按钮面板
     private JPanel centerPanel; //主区域面板
-    private MazeGrid grid[][];
-    private JButton restart;
-    private JButton start;
+    private JPanel dfsCenterPanel;
+    private JPanel primCenterPanel;
+    private JPanel ellerCenterPanel;
+    private MazeGrid dfsGrid[][];
+    private MazeGrid primGrid[][];
+    private MazeGrid ellerGrid[][];
+    private JButton dfsReStart;
+    private JButton dfsStart;
+    private JButton primReStart;
+    private JButton primStart;
+
     private int rows;// rows 和cols目前暂定只能是奇数
     private int cols;
     private List<String> willVisit; //保存待访问的当前块的邻接块
@@ -51,67 +59,142 @@ public class Maze extends JFrame implements ActionListener {
         panel = new JPanel();
         controlPanel = new JPanel();
         centerPanel = new JPanel();
+        dfsCenterPanel = new JPanel();
+        primCenterPanel = new JPanel();
         panel.setLayout(new BorderLayout()); //方位布局
-        restart = new JButton("regenerate the maze");
-        start = new JButton("start to explore");
-        grid = new MazeGrid[rows][cols];
+        dfsReStart = new JButton("regenerate the dfsMaze");//dfs迷宫 restart按钮
+        dfsStart = new JButton("dfsStart to explore");
+        primReStart = new JButton("regenerate the primMaze");
+        primStart = new JButton("primStart to explore");
 
-        centerPanel.setLayout(new GridLayout(rows, cols, 1, 1)); //网格布局
-        centerPanel.setBackground(new Color(0, 0, 0));
-        controlPanel.add(restart); //添加restart button
-        controlPanel.add(start); //添加start button
+        primGrid = new MazeGrid[rows][cols];
+        dfsGrid = new MazeGrid[rows][cols];
+        ellerGrid = new MazeGrid[rows][cols];
+        /*原来部分*/
+//        centerPanel.setLayout(new GridLayout(rows, cols, 1, 1)); //网格布局
+//        centerPanel.setBackground(new Color(0, 0, 0));
+        /*原来部分*/
 
-        start.addActionListener(this);
-        restart.addActionListener(this);
+        centerPanel.setLayout(new GridLayout(1, 2, 40, 0));//两个迷宫间距水平：40 纵向: 0
+        centerPanel.add(dfsCenterPanel);
+        centerPanel.add(primCenterPanel);
+
+        //dfs迷宫布局
+        dfsCenterPanel.setLayout(new GridLayout(rows, cols, 1, 1));//dfs迷宫 网格式布局
+        dfsCenterPanel.setBackground(new Color(0, 0, 0));
+
+        //prim迷宫布局
+        primCenterPanel.setLayout(new GridLayout(rows, cols, 1, 1));
+        primCenterPanel.setBackground(new Color(0, 0, 0));
+
+        controlPanel.setLayout(new GridLayout(1, 4, 40, 0));
+        controlPanel.add(dfsReStart); //添加dfs restart button
+        controlPanel.add(dfsStart); //添加dfs start button
+        controlPanel.add(primReStart);//添加prim restart button
+        controlPanel.add(primStart);//添加prim start button
+
+        panel.add(controlPanel, BorderLayout.NORTH); //上方加入控制面板
+        panel.add(centerPanel, BorderLayout.CENTER); //中心放置迷宫
+
+
+        dfsStart.addActionListener(this);
+        dfsReStart.addActionListener(this);
+//        primStart.addActionListener(this);
+//        primReStart.addActionListener(this);
+
 
         //初始化迷宫图的各单元
-        for (int i = 0; i < grid.length; i++)
-            for (int j = 0; j < grid[i].length; j++) {
+        for (int i = 0; i < dfsGrid.length; i++)
+            for (int j = 0; j < dfsGrid[i].length; j++) {
                 //mark=true(偶数坐标)为通路, false(奇数坐标)为墙
-                if (j % 2 == 0 && i % 2 == 0)
-                    grid[i][j] = new MazeGrid(true, 20, 20);
-                else
-                    grid[i][j] = new MazeGrid(false, 20, 20);
+                if (j % 2 == 0 && i % 2 == 0) {
+                    dfsGrid[i][j] = new MazeGrid(true, 20, 20);
+                    primGrid[i][j] = new MazeGrid(true, 20, 20);//初始化prim
+                    ellerGrid[i][j] = new MazeGrid(true, 20, 20);
+                } else {
+                    dfsGrid[i][j] = new MazeGrid(false, 20, 20);
+                    primGrid[i][j] = new MazeGrid(false, 20, 20);//初始化prim
+                    ellerGrid[i][j] = new MazeGrid(false, 20, 20);
+                }
             }
 
         //初始化入口
-        grid[0][0].setVisited(true);
-        grid[0][0].setPersonCome(true);
-        grid[0][0].setStart(true);
+        dfsGrid[0][0].setVisited(true);
+        dfsGrid[0][0].setPersonCome(true);
+        dfsGrid[0][0].setStart(true);
+
+        primGrid[0][0].setVisited(true);
+        primGrid[0][0].setPersonCome(true);
+        primGrid[0][0].setStart(true);
+
+        ellerGrid[0][0].setVisited(true);
+        ellerGrid[0][0].setPersonCome(true);
+        ellerGrid[0][0].setStart(true);
+
         visited.add("0#0");
 
         //初始化出口
-        grid[rows - 1][cols - 1].setEnd(true);
+        dfsGrid[rows - 1][cols - 1].setEnd(true);
+
+        primGrid[rows - 1][cols - 1].setEnd(true);
+
+        ellerGrid[rows - 1][cols - 1].setEnd(true);
 
         //从grid[0][0]开始递归生成迷宫
 
 //        /*DFS生成迷宫*/
         createDfsMap dfsMap = new createDfsMap();//生成dfs对象
-        dfsMap.SetProperty(rows, cols, willVisit, visited, grid);//把属性传入
-        grid = dfsMap.generateMap();//生成迷宫
+        dfsMap.SetProperty(rows, cols, willVisit, visited, dfsGrid);//把属性传入
+        dfsGrid = dfsMap.generateMap();//生成迷宫
         /*DFS生成迷宫*/
 
-//        /*Prim生成迷宫*/
+        /*Prim生成迷宫*/
 //        creatPrimMap primMap = new creatPrimMap();
-//        primMap.SetProperty(rows, cols, wallList, grid);
-//        grid = primMap.generateMap();
+//        primMap.SetProperty(rows, cols, wallList, dfsGrid);
+//        primGrid = primMap.generateMap();
         /*Prim生成迷宫*/
 
 //        /*Eller生成迷宫*/
 //        CreateEllerMap ellerMap = new CreateEllerMap();
-//        ellerMap.SetProperty(rows,cols,willVisit,visited,grid);
-//        grid = ellerMap.generateMap();
+//        ellerMap.SetProperty(rows,cols,willVisit,visited,dfsGrid);
+//        dfsGrid = ellerMap.generateMap();
 //        /*Eller生成迷宫*/
 
-        for (MazeGrid[] mazeGrids : grid) { //foreach 以每行遍历
+
+
+        /*dfs迷宫打印*/
+        for (MazeGrid[] mazeGrids : dfsGrid) { //foreach 以每行遍历
             for (int j = 0; j < mazeGrids.length; j++) { //依次遍历每行各个方块
+
                 mazeGrids[j].repaint();
-                centerPanel.add(mazeGrids[j]);
+                dfsCenterPanel.add(mazeGrids[j]);
+                /*原先*/
+//                centerPanel.add(mazeGrids[j]);
             }
         }
 
-        panel.add(controlPanel, BorderLayout.NORTH); //上方加入控制面板
-        panel.add(centerPanel, BorderLayout.CENTER); //中心放置迷宫
+        /*prim迷宫打印*/
+//        for (MazeGrid[] mazeGrids : primGrid) { //foreach 以每行遍历
+//            for (int j = 0; j < mazeGrids.length; j++) { //依次遍历每行各个方块
+//
+//                mazeGrids[j].repaint();
+//                primCenterPanel.add(mazeGrids[j]);
+//                /*原先*/
+////                centerPanel.add(mazeGrids[j]);
+//            }
+//        }
+
+//        for (MazeGrid[] mazeGrids : ellerGrid) { //foreach 以每行遍历
+//            for (int j = 0; j < mazeGrids.length; j++) { //依次遍历每行各个方块
+//
+//                mazeGrids[j].repaint();
+//                primCenterPanel.add(mazeGrids[j]);
+//                /*原先*/
+////                centerPanel.add(mazeGrids[j]);
+//            }
+//        }
+
+
     }
 
 //    /**
@@ -231,29 +314,29 @@ public class Maze extends JFrame implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getActionCommand().equals("regenerate the maze")) {
+        if (e.getActionCommand().equals("regenerate the dfsMaze")) {
             long start = System.currentTimeMillis();
-            refreshMap(grid);
+            refreshMap(dfsGrid);
             long end = System.currentTimeMillis();
             System.out.println("使用ArrayList生成迷宫耗时：" + (end - start) + "毫秒");
-        } else if (e.getActionCommand().equals("start to explore")) {
+        } else if (e.getActionCommand().equals("dfsStart to explore")) {
             startTime = System.currentTimeMillis();
-            start.setVisible(false);
-            restart.setText("prohibit to refresh");
+            dfsStart.setVisible(false);
+            dfsReStart.setText("prohibit to refresh");
             int delay = 50; //former:1000
             int period = 25;// former:500 循环间隔
             java.util.Timer timer = new java.util.Timer();
             timer.scheduleAtFixedRate(new TimerTask() {
                 public void run() {
-                    if (grid[rows - 1][cols - 1].isPersonCome()) {
+                    if (dfsGrid[rows - 1][cols - 1].isPersonCome()) {
                         endTime = System.currentTimeMillis();
                         JOptionPane.showMessageDialog(null, "已经走出迷宫，耗时"
                                         + (endTime - startTime) / 1000 + "秒", "消息提示",
                                 JOptionPane.ERROR_MESSAGE);
                         this.cancel();
-                        restart.setText("regenerate the maze");
+                        dfsReStart.setText("regenerate the dfsMaze");
                     } else {
-                        String id = goMaze(grid, comeX, comeY);
+                        String id = goMaze(dfsGrid, comeX, comeY);
                         comeX = Integer.parseInt(id.split("#")[0]);
                         comeY = Integer.parseInt(id.split("#")[1]);
                     }
