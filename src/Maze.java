@@ -174,15 +174,15 @@ public class Maze extends JFrame implements ActionListener {
         }
 
         /*prim迷宫打印*/
-//        for (MazeGrid[] mazeGrids : primGrid) { //foreach 以每行遍历
-//            for (int j = 0; j < mazeGrids.length; j++) { //依次遍历每行各个方块
-//
-//                mazeGrids[j].repaint();
-//                primCenterPanel.add(mazeGrids[j]);
-//                /*原先*/
-////                centerPanel.add(mazeGrids[j]);
-//            }
-//        }
+        for (MazeGrid[] mazeGrids : primGrid) { //foreach 以每行遍历
+            for (int j = 0; j < mazeGrids.length; j++) { //依次遍历每行各个方块
+
+                mazeGrids[j].repaint();
+                primCenterPanel.add(mazeGrids[j]);
+                /*原先*/
+//                centerPanel.add(mazeGrids[j]);
+            }
+        }
 
 //        for (MazeGrid[] mazeGrids : ellerGrid) { //foreach 以每行遍历
 //            for (int j = 0; j < mazeGrids.length; j++) { //依次遍历每行各个方块
