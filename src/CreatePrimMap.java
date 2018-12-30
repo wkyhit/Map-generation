@@ -1,6 +1,6 @@
 import java.util.List;
 
-public class creatPrimMap {
+public class CreatePrimMap {
     private int rows;
     private int cols;
     //    private List<String> willVisit; //保存待访问的当前通路集合的邻接白块
@@ -9,7 +9,7 @@ public class creatPrimMap {
     private MazeGrid grid[][];
 
 
-    public creatPrimMap() {
+    public CreatePrimMap() {
     }
 
     public void SetProperty(int rows, int cols, List<String> wallList, MazeGrid grid[][]) {

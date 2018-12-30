@@ -5,7 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 
-public class createDfsMap {
+public class CreateDfsMap {
 
     private int rows;// rows 和cols目前暂定只能是奇数
     private int cols;
@@ -14,7 +14,7 @@ public class createDfsMap {
     private MazeGrid grid[][];
 
 
-    public createDfsMap() {
+    public CreateDfsMap() {
     }
 
     //设置外界传入的属性
