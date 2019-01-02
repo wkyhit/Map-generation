@@ -1,27 +1,45 @@
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TimerTask;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 
 // 迷宫
 @SuppressWarnings("serial")
 public class Maze extends JFrame implements ActionListener {
 
+    private String path = System.getProperty("user.dir");
+
+    private InitDfsPanel dfsPanel;
+    private InitPrimPanel primPanel;
+    private InitEllerPanel ellerPanel;
+//    private GoMaze goMaze;
+
+    /*界面面板*/
     private JPanel panel;
-    private JPanel controlPanel;//control按钮面板
+
     private JPanel sizePanel;//控制迷宫大小面板
     private JPanel centerPanel; //主区域面板
-    private JPanel dfsCenterPanel;
-    private JPanel primCenterPanel;
-    private JPanel ellerCenterPanel;
+    private JPanel dfsCenterPanel;//dfs迷宫面板
+    private JPanel primCenterPanel;//prim迷宫面板
+    private JPanel ellerCenterPanel;//eller迷宫面板
+    /*界面面板*/
+
+    /*迷宫数组*/
     private MazeGrid dfsGrid[][];
     private MazeGrid primGrid[][];
     private MazeGrid ellerGrid[][];
+    /*迷宫数组*/
+
+    /*界面按钮*/
     private JButton dfsReStart;
     private JButton dfsStart;
     private JButton primReStart;
@@ -29,10 +47,12 @@ public class Maze extends JFrame implements ActionListener {
     private JButton ellerReStart;
     private JButton ellerStart;
     private JButton sizeButton;
+    private JButton saveImage;//保存图片按钮
+    /*界面按钮*/
     private JTextField sizeInput;//大小输入框
 
-    private int rows;// rows 和cols目前暂定只能是奇数
-    private int cols;
+    private int rows = 25;// rows 和cols目前暂定只能是奇数
+    private int cols = 25;
     private List<String> willVisit; //保存待访问的当前块的邻接块
     private List<String> visited;   //保存图中所有已访问过块
     private LinkedList<String> comed;
@@ -40,24 +60,55 @@ public class Maze extends JFrame implements ActionListener {
     private long startTime;
     private long endTime;
 
-    public Maze() {
-        rows = 25; //定义迷宫大小
-        cols = 25;
-        willVisit = new ArrayList<String>();
-        visited = new ArrayList<String>();
-        comed = new LinkedList<String>();
-        wallList = new LinkedList<String>();
+    private Maze() {
+        willVisit = new ArrayList<>();
+        visited = new ArrayList<>();
+        comed = new LinkedList<>();
+        wallList = new LinkedList<>();
         init();
         this.setTitle("回溯法--走迷宫");
+        ImageIcon icon = new ImageIcon("icon.png"); //图片和项目同一路径，故不用图片的路径
+        this.setIconImage(icon.getImage());
         this.add(panel);
         this.pack();
-        this.setVisible(true);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setVisible(true);
     }
 
-    public void init() {
+    public void savePic(String path, String picType) {
+        BufferedImage dfsImage = null;
+        BufferedImage primImage = null;
+        BufferedImage ellerImage = null;
+        try {
+            switch (picType) {
+                case "dfs":
+                    getScreen(path, this.dfsCenterPanel);
+                    break;
+                case "prim":
+                    getScreen(path, this.primCenterPanel);
+                    break;
+                case "eller":
+                    getScreen(path, this.ellerCenterPanel);
+                    break;
+            }
+        } catch (AWTException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void getScreen(String path, JPanel dfsCenterPanel) throws AWTException, IOException {
+        BufferedImage dfsImage;
+        dfsImage = new Robot().createScreenCapture(
+                new Rectangle(dfsCenterPanel.getX() + 8, dfsCenterPanel.getY() + 65, dfsCenterPanel.getWidth(), dfsCenterPanel.getHeight() + 5));
+        ImageIO.write(dfsImage, "png", new File(path));
+    }
+
+    private void init() {
         panel = new JPanel();
-        controlPanel = new JPanel();
+        //control按钮面板
+        JPanel controlPanel = new JPanel();
         sizePanel = new JPanel();
         centerPanel = new JPanel();
         dfsCenterPanel = new JPanel();
@@ -74,30 +125,34 @@ public class Maze extends JFrame implements ActionListener {
         sizeButton = new JButton("commit");
         sizeInput = new JTextField();//大小输入框
 
+        saveImage = new JButton("save image");//保存迷宫图片
+
         primGrid = new MazeGrid[rows][cols];
         dfsGrid = new MazeGrid[rows][cols];
         ellerGrid = new MazeGrid[rows][cols];
-        /*原来部分*/
-//        centerPanel.setLayout(new GridLayout(rows, cols, 1, 1)); //网格布局
-//        centerPanel.setBackground(new Color(0, 0, 0));
-        /*原来部分*/
 
+
+        InitDfsPanel dfsPanel = new InitDfsPanel(rows, cols);
+        InitPrimPanel primPanel = new InitPrimPanel(rows, cols);
+        InitEllerPanel ellerPanel = new InitEllerPanel(rows, cols);
+        this.dfsPanel = dfsPanel;
+        this.primPanel = primPanel;
+        this.ellerPanel = ellerPanel;
+
+        dfsGrid = dfsPanel.getMaze();
+        primGrid = primPanel.getMaze();
+        ellerGrid = ellerPanel.getMaze();
+
+        dfsCenterPanel = dfsPanel.getMazePanel();
+        primCenterPanel = primPanel.getMazePanel();
+        ellerCenterPanel = ellerPanel.getMazePanel();
+
+        //中心迷宫面板添加
         centerPanel.setLayout(new GridLayout(1, 3, 40, 0));//三个迷宫间距水平：40 纵向: 0
         centerPanel.add(dfsCenterPanel);
         centerPanel.add(primCenterPanel);
         centerPanel.add(ellerCenterPanel);
 
-        //dfs迷宫布局
-        dfsCenterPanel.setLayout(new GridLayout(rows, cols, 1, 1));//dfs迷宫 网格式布局
-        dfsCenterPanel.setBackground(new Color(0, 0, 0));
-
-        //prim迷宫布局
-        primCenterPanel.setLayout(new GridLayout(rows, cols, 1, 1));
-        primCenterPanel.setBackground(new Color(0, 15, 255));
-
-        //eller迷宫布局
-        ellerCenterPanel.setLayout(new GridLayout(rows, cols, 1, 1));
-        ellerCenterPanel.setBackground(new Color(226, 143, 0));
 
         controlPanel.setLayout(new GridLayout(1, 6, 40, 0));
         controlPanel.add(dfsReStart); //添加dfs restart button
@@ -112,171 +167,27 @@ public class Maze extends JFrame implements ActionListener {
         sizePanel.setLayout(new FlowLayout());
         sizePanel.add(sizeInput);
         sizePanel.add(sizeButton);
-
+        sizePanel.add(saveImage);
 
         panel.add(controlPanel, BorderLayout.NORTH); //上方加入控制面板
         panel.add(centerPanel, BorderLayout.CENTER); //中心放置迷宫
         panel.add(sizePanel, BorderLayout.SOUTH);//下方放文本控制
 
-
+        /*增加按钮事件监听*/
         dfsStart.addActionListener(this);
         dfsReStart.addActionListener(this);
         primStart.addActionListener(this);
         primReStart.addActionListener(this);
         ellerStart.addActionListener(this);
         ellerReStart.addActionListener(this);
-
-        //初始化迷宫图的各单元
-        for (int i = 0; i < dfsGrid.length; i++)
-            for (int j = 0; j < dfsGrid[i].length; j++) {
-                //mark=true(偶数坐标)为通路, false(奇数坐标)为墙
-                if (j % 2 == 0 && i % 2 == 0) {
-                    dfsGrid[i][j] = new MazeGrid(true, 20, 20);
-                    primGrid[i][j] = new MazeGrid(true, 20, 20);//初始化prim
-                    ellerGrid[i][j] = new MazeGrid(true, 20, 20);
-                } else {
-                    dfsGrid[i][j] = new MazeGrid(false, 20, 20);
-                    primGrid[i][j] = new MazeGrid(false, 20, 20);//初始化prim
-                    ellerGrid[i][j] = new MazeGrid(false, 20, 20);
-                }
-            }
-
-        //初始化入口
-        dfsGrid[0][0].setVisited(true);
-        dfsGrid[0][0].setPersonCome(true);
-        dfsGrid[0][0].setStart(true);
-
-        primGrid[0][0].setVisited(true);
-        primGrid[0][0].setPersonCome(true);
-        primGrid[0][0].setStart(true);
-
-        ellerGrid[0][0].setVisited(true);
-        ellerGrid[0][0].setPersonCome(true);
-        ellerGrid[0][0].setStart(true);
-
-        visited.add("0#0");
-
-        //初始化出口
-        dfsGrid[rows - 1][cols - 1].setEnd(true);
-
-        primGrid[rows - 1][cols - 1].setEnd(true);
-
-        ellerGrid[rows - 1][cols - 1].setEnd(true);
-
-        //从grid[0][0]开始递归生成迷宫
-
-
-        /*DFS生成迷宫*/
-        CreateDfsMap dfsMap = new CreateDfsMap();//生成dfs对象
-        dfsMap.SetProperty(rows, cols, willVisit, visited, dfsGrid);//把属性传入
-        dfsGrid = dfsMap.generateMap();//生成迷宫
-        /*DFS生成迷宫*/
-
-        /*Prim生成迷宫*/
-        CreatePrimMap primMap = new CreatePrimMap();
-        primMap.SetProperty(rows, cols, wallList, primGrid);
-        primGrid = primMap.generateMap();
-        /*Prim生成迷宫*/
-
-        /*Eller生成迷宫*/
-        CreateEllerMap ellerMap = new CreateEllerMap();
-        ellerMap.SetProperty(rows, cols, willVisit, visited, ellerGrid);
-        ellerGrid = ellerMap.generateMap();
-        /*Eller生成迷宫*/
-
-
-
-        /*dfs迷宫打印*/
-        for (MazeGrid[] mazeGrids : dfsGrid) { //foreach 以每行遍历
-            for (int j = 0; j < mazeGrids.length; j++) { //依次遍历每行各个方块
-
-                mazeGrids[j].repaint();
-                dfsCenterPanel.add(mazeGrids[j]);
-                /*原先*/
-//                centerPanel.add(mazeGrids[j]);
-            }
-        }
-
-        /*prim迷宫打印*/
-        for (MazeGrid[] mazeGrids : primGrid) { //foreach 以每行遍历
-            for (int j = 0; j < mazeGrids.length; j++) { //依次遍历每行各个方块
-
-                mazeGrids[j].repaint();
-                primCenterPanel.add(mazeGrids[j]);
-                /*原先*/
-//                centerPanel.add(mazeGrids[j]);
-            }
-        }
-
-        /*eller迷宫打印*/
-        for (MazeGrid[] mazeGrids : ellerGrid) { //foreach 以每行遍历
-            for (int j = 0; j < mazeGrids.length; j++) { //依次遍历每行各个方块
-
-                mazeGrids[j].repaint();
-                ellerCenterPanel.add(mazeGrids[j]);
-                /*原先*/
-//                centerPanel.add(mazeGrids[j]);
-            }
-        }
-
-
+        saveImage.addActionListener(this);
     }
 
-//    /**
-//     * 生成迷宫
-//     */
-//    public MazeGrid[][] createMap(MazeGrid mazeGrid[][], int x, int y) {
-//        int visitX = 0;
-//        int visitY = 0;
-//        if (x - 2 >= 0) {
-//            if (!mazeGrid[x - 2][y].isVisited()) { //左侧方块未visit
-//                willVisit.add((x - 2) + "#" + y);
-//            }
-//        }
-//        if (x + 2 < cols) {
-//            if (!mazeGrid[x + 2][y].isVisited()) { //右侧方块未visit
-//                willVisit.add((x + 2) + "#" + y);
-//            }
-//        }
-//        if (y - 2 >= 0) {
-//            if (!mazeGrid[x][y - 2].isVisited()) { //下侧方块未visit
-//                willVisit.add(x + "#" + (y - 2));
-//            }
-//        }
-//        if (y + 2 < rows) {
-//            if (!mazeGrid[x][y + 2].isVisited()) { //上侧方块未visit
-//                willVisit.add(x + "#" + (y + 2));
-//            }
-//        }
-//        if (!willVisit.isEmpty()) { //如果willVisit列表不为空(有邻接点访问)
-//            int visit = (int) (Math.random() * willVisit.size()); //产生0~size的随机数
-//            String id = willVisit.get(visit);                     //根据随机数获取列表中随机的一个相邻块
-//            visitX = Integer.parseInt(id.split("#")[0]);   //根据"#"分割字符串，将x,y坐标获取
-//            visitY = Integer.parseInt(id.split("#")[1]);   //将获取的x,y(string类型)转成int类型，并赋给visitX/Y
-//            mazeGrid[(visitX + x) / 2][(visitY + y) / 2].setMark(true); //将当前块与邻接块中间的块(墙)设为通路
-//
-//            mazeGrid[visitX][visitY].setVisited(true); //标记该邻接块已visit过
-//            if (!visited.contains(id)) {// 将这个方块加到已访问中去
-//                visited.add(id);
-//            }
-//            willVisit.clear();  //将邻接点列表清空
-//            createMap(mazeGrid, visitX, visitY); //递归调用，下次起点从mazeGrid[visitX][visitY]开始
-//        } else {
-//            if (!visited.isEmpty()) {   //无邻接点访问，返回上一个访问过的方块
-//                String id = visited.remove(visited.size() - 1);// 取出最后一个元素(退回上一个访问过的方块)
-//                visitX = Integer.parseInt(id.split("#")[0]);
-//                visitY = Integer.parseInt(id.split("#")[1]);
-//                mazeGrid[visitX][visitY].setVisited(true);
-//                createMap(mazeGrid, visitX, visitY); //递归调用，下次起点从退回的(上一个)方块开始
-//            }
-//        }
-//        return mazeGrid;
-//    }
 
     /**
      * 走迷宫
      */
-    public String goMaze(MazeGrid mazeGrid[][], int x, int y) {
+    private String goMaze(MazeGrid mazeGrid[][], int x, int y) {
         int comeX = 0;
         int comeY = 0;
         // left
@@ -334,130 +245,296 @@ public class Maze extends JFrame implements ActionListener {
         mazeGrid[comeX][comeY].repaint();
     }
 
-    int comeX = 0;
-    int comeY = 0;
+    private int comeX = 0;
+    private int comeY = 0;
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getActionCommand().equals("regenerate the dfsMaze")) {
-            long start = System.currentTimeMillis();
-            refreshMap(dfsGrid);
-            long end = System.currentTimeMillis();
-            System.out.println("使用ArrayList生成迷宫耗时：" + (end - start) + "毫秒");
-        } else if (e.getActionCommand().equals("dfsStart to explore")) {
-            startTime = System.currentTimeMillis();
-            dfsStart.setVisible(false);
-            dfsReStart.setText("prohibit to refresh");
-            int delay = 50; //former:1000
-            int period = 25;// former:500 循环间隔
-            java.util.Timer timer = new java.util.Timer();
-            timer.scheduleAtFixedRate(new TimerTask() {
-                public void run() {
-                    if (dfsGrid[rows - 1][cols - 1].isPersonCome()) {
-                        endTime = System.currentTimeMillis();
-                        JOptionPane.showMessageDialog(null, "已经走出迷宫，耗时"
-                                        + (endTime - startTime) / 1000 + "秒", "消息提示",
-                                JOptionPane.ERROR_MESSAGE);
-                        this.cancel();
-                        dfsReStart.setText("regenerate the dfsMaze");
-                    } else {
-                        String id = goMaze(dfsGrid, comeX, comeY);
-                        comeX = Integer.parseInt(id.split("#")[0]);
-                        comeY = Integer.parseInt(id.split("#")[1]);
+        switch (e.getActionCommand()) {
+            case "save image": {
+                savePic(this.path + "/dfspic.png", "dfs");
+                savePic(this.path + "/primpic.png", "prim");
+                savePic(this.path + "/ellerpic.png", "eller");
+                System.out.println("save image success!");
+                break;
+            }
+            case "regenerate the dfsMaze": {
+                dfsReStart.setVisible(false);
+                dfsStart.setVisible(false);
+                primReStart.setVisible(false);
+                primStart.setVisible(false);
+                ellerReStart.setVisible(false);
+                ellerStart.setVisible(false);
+
+                long start = System.currentTimeMillis();
+                refreshMap("dfs");
+                long end = System.currentTimeMillis();
+                dfsReStart.setVisible(true);
+                dfsStart.setVisible(true);
+                primReStart.setVisible(true);
+                primStart.setVisible(true);
+                ellerReStart.setVisible(true);
+                ellerStart.setVisible(true);
+                System.out.println("生成DFS迷宫耗时：" + (end - start) + "毫秒");
+                break;
+            }
+            case "dfsStart to explore": {
+                startTime = System.currentTimeMillis();
+                dfsReStart.setText("prohibit to refresh");
+                dfsStart.setVisible(false);
+                primReStart.setVisible(false);
+                primStart.setVisible(false);
+                ellerReStart.setVisible(false);
+                ellerStart.setVisible(false);
+                int delay = 50; //former:1000
+
+                int period = 25;// former:500 循环间隔
+
+                java.util.Timer timer = new java.util.Timer();
+                timer.scheduleAtFixedRate(new TimerTask() {
+                    public void run() {
+                        if (dfsGrid[rows - 1][cols - 1].isPersonCome()) {
+                            endTime = System.currentTimeMillis();
+                            JOptionPane.showMessageDialog(null, "已经走出迷宫，耗时"
+                                            + (endTime - startTime) / 1000 + "秒", "消息提示",
+                                    JOptionPane.ERROR_MESSAGE);
+                            centerPanel.setVisible(false);
+                            dfsGrid[0][0].setVisited(true);
+                            dfsGrid[rows - 1][cols - 1].setPersonCome(false);
+                            dfsGrid[0][0].setPersonCome(true);
+                            dfsGrid[0][0].setStart(true);
+
+                            comeX = 0;
+                            comeY = 0;
+                            willVisit.clear();
+                            visited.clear();
+                            comed.clear();
+
+                            dfsReStart.setText("regenerate the dfsMaze");
+                            dfsReStart.setVisible(true);
+                            dfsStart.setVisible(true);
+                            primReStart.setVisible(true);
+                            primStart.setVisible(true);
+                            ellerStart.setVisible(true);
+                            ellerReStart.setVisible(true);
+
+                            centerPanel.setVisible(true);
+                            this.cancel();
+                        } else {
+                            String id = goMaze(dfsGrid, comeX, comeY);
+                            comeX = Integer.parseInt(id.split("#")[0]);
+                            comeY = Integer.parseInt(id.split("#")[1]);
+                        }
                     }
-                }
-            }, delay, period);
-        } else if (e.getActionCommand().equals("regenerate the primMaze")) {
-            long start = System.currentTimeMillis();
-            refreshMap(primGrid);
-            long end = System.currentTimeMillis();
-            System.out.println("使用ArrayList生成迷宫耗时：" + (end - start) + "毫秒");
-        } else if (e.getActionCommand().equals("primStart to explore")) {
-            startTime = System.currentTimeMillis();
-            primStart.setVisible(false);
-            primReStart.setText("prohibit to refresh");
-            int delay = 50; //former:1000
-            int period = 25;// former:500 循环间隔
-            java.util.Timer timer = new java.util.Timer();
-            timer.scheduleAtFixedRate(new TimerTask() {
-                public void run() {
-                    if (primGrid[rows - 1][cols - 1].isPersonCome()) {
-                        endTime = System.currentTimeMillis();
-                        JOptionPane.showMessageDialog(null, "已经走出迷宫，耗时"
-                                        + (endTime - startTime) / 1000 + "秒", "消息提示",
-                                JOptionPane.ERROR_MESSAGE);
-                        this.cancel();
-                        primReStart.setText("regenerate the primMaze");
-                    } else {
-                        String id = goMaze(primGrid, comeX, comeY);
-                        comeX = Integer.parseInt(id.split("#")[0]);
-                        comeY = Integer.parseInt(id.split("#")[1]);
+                }, delay, period);
+                break;
+            }
+            case "regenerate the primMaze": {
+
+                dfsReStart.setVisible(false);
+                dfsStart.setVisible(false);
+                primReStart.setVisible(false);
+                primStart.setVisible(false);
+                ellerReStart.setVisible(false);
+                ellerStart.setVisible(false);
+                long start = System.currentTimeMillis();
+                refreshMap("prim");
+                long end = System.currentTimeMillis();
+                dfsReStart.setVisible(true);
+                dfsStart.setVisible(true);
+                primReStart.setVisible(true);
+                primStart.setVisible(true);
+                ellerReStart.setVisible(true);
+                ellerStart.setVisible(true);
+                System.out.println("生成Prim迷宫耗时：" + (end - start) + "毫秒");
+                break;
+            }
+            case "primStart to explore": {
+                startTime = System.currentTimeMillis();
+                dfsReStart.setVisible(false);
+                dfsStart.setVisible(false);
+                primReStart.setText("prohibit to refresh");
+                primStart.setVisible(false);
+                ellerReStart.setVisible(false);
+                ellerStart.setVisible(false);
+
+                int delay = 50; //former:1000
+
+                int period = 25;// former:500 循环间隔
+
+                java.util.Timer timer = new java.util.Timer();
+                timer.scheduleAtFixedRate(new TimerTask() {
+                    public void run() {
+                        if (primGrid[rows - 1][cols - 1].isPersonCome()) {
+                            endTime = System.currentTimeMillis();
+                            JOptionPane.showMessageDialog(null, "已经走出迷宫，耗时"
+                                            + (endTime - startTime) / 1000 + "秒", "消息提示",
+                                    JOptionPane.ERROR_MESSAGE);
+
+                            primGrid[0][0].setVisited(true);
+                            primGrid[rows - 1][cols - 1].setPersonCome(false);
+                            primGrid[0][0].setPersonCome(true);
+                            primGrid[0][0].setStart(true);
+
+                            comeX = 0;
+                            comeY = 0;
+                            willVisit.clear();
+                            visited.clear();
+                            comed.clear();
+
+                            dfsReStart.setVisible(true);
+                            dfsStart.setVisible(true);
+                            primReStart.setText("regenerate the primMaze");
+                            primReStart.setVisible(true);
+                            primStart.setVisible(true);
+                            ellerReStart.setVisible(true);
+                            ellerStart.setVisible(true);
+                            this.cancel();
+                        } else {
+                            String id = goMaze(primGrid, comeX, comeY);
+                            comeX = Integer.parseInt(id.split("#")[0]);
+                            comeY = Integer.parseInt(id.split("#")[1]);
+                        }
                     }
-                }
-            }, delay, period);
-        } else if (e.getActionCommand().equals("regenerate the ellerMaze")) {
-            long start = System.currentTimeMillis();
-            refreshMap(primGrid);
-            long end = System.currentTimeMillis();
-            System.out.println("使用ArrayList生成迷宫耗时：" + (end - start) + "毫秒");
-        } else if (e.getActionCommand().equals("ellerStart to explore")) {
-            startTime = System.currentTimeMillis();
-            ellerStart.setVisible(false);
-            ellerReStart.setText("prohibit to refresh");
-            int delay = 50; //former:1000
-            int period = 25;// former:500 循环间隔
-            java.util.Timer timer = new java.util.Timer();
-            timer.scheduleAtFixedRate(new TimerTask() {
-                public void run() {
-                    if (ellerGrid[rows - 1][cols - 1].isPersonCome()) {
-                        endTime = System.currentTimeMillis();
-                        JOptionPane.showMessageDialog(null, "已经走出迷宫，耗时"
-                                        + (endTime - startTime) / 1000 + "秒", "消息提示",
-                                JOptionPane.ERROR_MESSAGE);
-                        this.cancel();
-                        ellerReStart.setText("regenerate the ellerMaze");
-                    } else {
-                        String id = goMaze(primGrid, comeX, comeY);
-                        comeX = Integer.parseInt(id.split("#")[0]);
-                        comeY = Integer.parseInt(id.split("#")[1]);
+                }, delay, period);
+                break;
+            }
+            case "regenerate the ellerMaze": {
+
+                dfsReStart.setVisible(false);
+                dfsStart.setVisible(false);
+                primReStart.setVisible(false);
+                primStart.setVisible(false);
+                ellerReStart.setVisible(false);
+                ellerStart.setVisible(false);
+
+                long start = System.currentTimeMillis();
+                refreshMap("eller");
+                long end = System.currentTimeMillis();
+                dfsReStart.setVisible(true);
+                dfsStart.setVisible(true);
+                primReStart.setVisible(true);
+                primStart.setVisible(true);
+                ellerReStart.setVisible(true);
+                ellerStart.setVisible(true);
+                System.out.println("生成eller迷宫耗时：" + (end - start) + "毫秒");
+                break;
+            }
+            case "ellerStart to explore": {
+                startTime = System.currentTimeMillis();
+                dfsReStart.setVisible(false);
+                dfsStart.setVisible(false);
+                primReStart.setVisible(false);
+                primStart.setVisible(false);
+                ellerReStart.setText("prohibit to refresh");
+                ellerStart.setVisible(false);
+                int delay = 50; //former:1000
+
+                int period = 25;// former:500 循环间隔
+
+                java.util.Timer timer = new java.util.Timer();
+                timer.scheduleAtFixedRate(new TimerTask() {
+                    public void run() {
+                        if (ellerGrid[rows - 1][cols - 1].isPersonCome()) {
+                            endTime = System.currentTimeMillis();
+                            JOptionPane.showMessageDialog(null, "已经走出迷宫，耗时"
+                                            + (endTime - startTime) / 1000 + "秒", "消息提示",
+                                    JOptionPane.ERROR_MESSAGE);
+
+                            ellerGrid[0][0].setVisited(true);
+                            ellerGrid[rows - 1][cols - 1].setPersonCome(false);
+                            ellerGrid[0][0].setPersonCome(true);
+                            ellerGrid[0][0].setStart(true);
+
+                            comeX = 0;
+                            comeY = 0;
+                            willVisit.clear();
+                            visited.clear();
+                            comed.clear();
+
+                            dfsReStart.setVisible(true);
+                            dfsStart.setVisible(true);
+                            primReStart.setVisible(true);
+                            primStart.setVisible(true);
+                            ellerReStart.setText("regenerate the ellerMaze");
+                            ellerReStart.setVisible(true);
+                            ellerStart.setVisible(true);
+                            this.cancel();
+                        } else {
+                            String id = goMaze(ellerGrid, comeX, comeY);
+                            comeX = Integer.parseInt(id.split("#")[0]);
+                            comeY = Integer.parseInt(id.split("#")[1]);
+                        }
                     }
-                }
-            }, delay, period);
+                }, delay, period);
+                break;
+            }
         }
     }
 
-    /**
-     * 刷新地图
-     */
-    public void refreshMap(MazeGrid mazeGrid[][]) {
+    private void refreshMap(String mazeType) {
+
         comeX = 0;
         comeY = 0;
         willVisit.clear();
         visited.clear();
         comed.clear();
-        this.remove(panel);
-        init();
-        this.add(panel);
-        this.pack();
-        this.setVisible(true);
-    }
-//    public void refreshMap(MazeGrid mazeGrid[][], JPanel panel) {
-//        comeX = 0;
-//        comeY = 0;
-//        willVisit.clear();
-//        visited.clear();
-//        comed.clear();
-//        this.remove(panel);
-//        init();
-//        this.add(panel);
-//        this.pack();
-//        this.setVisible(true);
-//    }
+        wallList.clear();
 
+        switch (mazeType) {
+            case "dfs":
+                centerPanel.setVisible(false);
+                centerPanel.removeAll();
+                centerPanel.setLayout(new GridLayout(1, 3, 40, 1));
+                InitDfsPanel dfsPanel = new InitDfsPanel(rows, cols);
+                dfsCenterPanel = dfsPanel.getMazePanel();
+                this.dfsPanel = dfsPanel;
+                primCenterPanel = this.primPanel.getMazePanel();
+                ellerCenterPanel = this.ellerPanel.getMazePanel();
+                dfsGrid = dfsPanel.getMaze();
+                centerPanel.add(dfsCenterPanel);
+                centerPanel.add(primCenterPanel);
+                centerPanel.add(ellerCenterPanel);
+                centerPanel.setVisible(true);
+                break;
+            case "prim":
+                centerPanel.setVisible(false);
+                centerPanel.removeAll();
+                centerPanel.setLayout(new GridLayout(1, 3, 40, 1));
+                InitPrimPanel primPanel = new InitPrimPanel(rows, cols);
+                dfsCenterPanel = this.dfsPanel.getMazePanel();
+                primCenterPanel = primPanel.getMazePanel();
+                this.primPanel = primPanel;
+                ellerCenterPanel = this.ellerPanel.getMazePanel();
+                primGrid = primPanel.getMaze();
+                centerPanel.add(dfsCenterPanel);
+                centerPanel.add(primCenterPanel);
+                centerPanel.add(ellerCenterPanel);
+                centerPanel.setVisible(true);
+                break;
+            case "eller":
+                centerPanel.setVisible(false);
+                centerPanel.removeAll();
+                centerPanel.setLayout(new GridLayout(1, 3, 40, 1));
+                InitEllerPanel ellerPanel = new InitEllerPanel(rows, cols);
+                ellerCenterPanel = ellerPanel.getMazePanel();
+                dfsCenterPanel = this.dfsPanel.getMazePanel();
+                primCenterPanel = this.primPanel.getMazePanel();
+                this.ellerPanel = ellerPanel;
+                ellerGrid = ellerPanel.getMaze();
+                centerPanel.add(dfsCenterPanel);
+                centerPanel.add(primCenterPanel);
+                centerPanel.add(ellerCenterPanel);
+                centerPanel.setVisible(true);
+                break;
+
+        }
+
+    }
 
     public static void main(String args[]) {
         long start = System.currentTimeMillis();
-        new Maze();
+        Maze maze = new Maze();
         long end = System.currentTimeMillis();
         System.out.println("使用ArrayList生成迷宫耗时：" + (end - start) + "毫秒");
     }
