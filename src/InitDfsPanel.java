@@ -3,27 +3,23 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InitDfsPanel {
+class InitDfsPanel {
 
     private MazeGrid dfsGrid[][];
-    private int rows;
-    private int cols;
-    private List<String> visited;   //保存图中所有已访问过块
-    private List<String> willVisit; //保存待访问的当前块的邻接块
 
     private JPanel mazePanel;
 
-    public InitDfsPanel(int rows, int cols) {
+    InitDfsPanel(int rows, int cols) {
 
-        this.rows = rows;
-        this.cols = cols;
         dfsGrid = new MazeGrid[rows][cols];
-        willVisit = new ArrayList<String>();
-        visited = new ArrayList<String>();
+        //保存待访问的当前块的邻接块
+        List<String> willVisit = new ArrayList<>();
+        //保存图中所有已访问过块
+        List<String> visited = new ArrayList<>();
 
         mazePanel = new JPanel();
         mazePanel.setLayout(new GridLayout(rows, cols, 1, 1));
-        mazePanel.setBackground(new Color(0, 0, 0));
+        mazePanel.setBackground(new Color(240, 240, 240));
 
         for (int i = 0; i < dfsGrid.length; i++)
             for (int j = 0; j < dfsGrid[i].length; j++) {
@@ -36,14 +32,14 @@ public class InitDfsPanel {
             }
 
         //初始化入口
-        dfsGrid[0][0].setVisited(true);
+        dfsGrid[0][0].setVisited();
         dfsGrid[0][0].setPersonCome(true);
-        dfsGrid[0][0].setStart(true);
+        dfsGrid[0][0].setStart();
 
         visited.add("0#0");
 
         //初始化出口
-        dfsGrid[rows - 1][cols - 1].setEnd(true);
+        dfsGrid[rows - 1][cols - 1].setEnd();
 
         /*DFS生成迷宫*/
         CreateDfsMap dfsMap = new CreateDfsMap();//生成dfs对象
@@ -53,21 +49,21 @@ public class InitDfsPanel {
 
         /*dfs迷宫打印*/
         for (MazeGrid[] mazeGrids : dfsGrid) { //foreach 以每行遍历
-            for (int j = 0; j < mazeGrids.length; j++) { //依次遍历每行各个方块
+            for (MazeGrid mazeGrid : mazeGrids) { //依次遍历每行各个方块
 
-                mazeGrids[j].repaint();
-                mazePanel.add(mazeGrids[j]);
+                mazeGrid.repaint();
+                mazePanel.add(mazeGrid);
                 /*原先*/
 //                centerPanel.add(mazeGrids[j]);
             }
         }
     }
 
-    public MazeGrid[][] getMaze() {
+    MazeGrid[][] getMaze() {
         return this.dfsGrid;
     }
 
-    public JPanel getMazePanel() {
+    JPanel getMazePanel() {
         return this.mazePanel;
     }
 

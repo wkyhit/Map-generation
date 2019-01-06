@@ -1,18 +1,30 @@
-import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+
+import java.util.TimerTask;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedList;
+
+import java.awt.Robot;
+import java.awt.Rectangle;
+import java.awt.GridLayout;
+import java.awt.FlowLayout;
+import java.awt.AWTException;
+import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.TimerTask;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JButton;
+import javax.swing.ImageIcon;
+import javax.swing.JTextField;
+import javax.swing.JOptionPane;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
 
-// 迷宫
 @SuppressWarnings("serial")
 public class Maze extends JFrame implements ActionListener {
 
@@ -21,12 +33,10 @@ public class Maze extends JFrame implements ActionListener {
     private InitDfsPanel dfsPanel;
     private InitPrimPanel primPanel;
     private InitEllerPanel ellerPanel;
-//    private GoMaze goMaze;
 
     /*界面面板*/
     private JPanel panel;
 
-    private JPanel sizePanel;//控制迷宫大小面板
     private JPanel centerPanel; //主区域面板
     private JPanel dfsCenterPanel;//dfs迷宫面板
     private JPanel primCenterPanel;//prim迷宫面板
@@ -39,6 +49,8 @@ public class Maze extends JFrame implements ActionListener {
     private MazeGrid ellerGrid[][];
     /*迷宫数组*/
 
+    /*迷宫指示按钮*/
+
     /*界面按钮*/
     private JButton dfsReStart;
     private JButton dfsStart;
@@ -46,27 +58,21 @@ public class Maze extends JFrame implements ActionListener {
     private JButton primStart;
     private JButton ellerReStart;
     private JButton ellerStart;
-    private JButton sizeButton;
-    private JButton saveImage;//保存图片按钮
     /*界面按钮*/
     private JTextField sizeInput;//大小输入框
 
-    private int rows = 25;// rows 和cols目前暂定只能是奇数
-    private int cols = 25;
+    private int rows = 17;// rows 和cols目前暂定只能是奇数
+    private int cols = 17;
     private List<String> willVisit; //保存待访问的当前块的邻接块
-    private List<String> visited;   //保存图中所有已访问过块
     private LinkedList<String> comed;
-    private List<String> wallList; //prim算法墙链
     private long startTime;
     private long endTime;
 
     private Maze() {
         willVisit = new ArrayList<>();
-        visited = new ArrayList<>();
         comed = new LinkedList<>();
-        wallList = new LinkedList<>();
         init();
-        this.setTitle("回溯法--走迷宫");
+        this.setTitle("迷宫生成程序");
         ImageIcon icon = new ImageIcon("icon.png"); //图片和项目同一路径，故不用图片的路径
         this.setIconImage(icon.getImage());
         this.add(panel);
@@ -75,10 +81,7 @@ public class Maze extends JFrame implements ActionListener {
         this.setVisible(true);
     }
 
-    public void savePic(String path, String picType) {
-        BufferedImage dfsImage = null;
-        BufferedImage primImage = null;
-        BufferedImage ellerImage = null;
+    private void savePic(String path, String picType) {
         try {
             switch (picType) {
                 case "dfs":
@@ -91,9 +94,7 @@ public class Maze extends JFrame implements ActionListener {
                     getScreen(path, this.ellerCenterPanel);
                     break;
             }
-        } catch (AWTException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (AWTException | IOException e) {
             e.printStackTrace();
         }
     }
@@ -105,11 +106,22 @@ public class Maze extends JFrame implements ActionListener {
         ImageIO.write(dfsImage, "png", new File(path));
     }
 
+    private void setSize(int size) {
+        this.rows = size;
+        this.cols = size;
+    }
+
     private void init() {
         panel = new JPanel();
+
         //control按钮面板
         JPanel controlPanel = new JPanel();
-        sizePanel = new JPanel();
+        //底部功能面板
+        JPanel funcPanel = new JPanel();
+        //控制迷宫大小面板
+        JPanel sizePanel = new JPanel();
+        //迷宫类型提示面板
+        JPanel typePanel = new JPanel();
         centerPanel = new JPanel();
         dfsCenterPanel = new JPanel();
         primCenterPanel = new JPanel();
@@ -122,10 +134,18 @@ public class Maze extends JFrame implements ActionListener {
         ellerReStart = new JButton("regenerate the ellerMaze");
         ellerStart = new JButton("ellerStart to explore");
 
-        sizeButton = new JButton("commit");
+        //大小确认按钮
+        JButton sizeButton = new JButton("commit");
         sizeInput = new JTextField();//大小输入框
 
-        saveImage = new JButton("save image");//保存迷宫图片
+        //迷宫名称显示按钮
+        /*迷宫指示按钮*/
+        JButton DFS = new JButton("dfsMaze");
+        JButton PRIM = new JButton("primMaze");
+        JButton ELLER = new JButton("ellerMaze");
+
+        //保存图片按钮
+        JButton saveImage = new JButton("save image");
 
         primGrid = new MazeGrid[rows][cols];
         dfsGrid = new MazeGrid[rows][cols];
@@ -153,7 +173,6 @@ public class Maze extends JFrame implements ActionListener {
         centerPanel.add(primCenterPanel);
         centerPanel.add(ellerCenterPanel);
 
-
         controlPanel.setLayout(new GridLayout(1, 6, 40, 0));
         controlPanel.add(dfsReStart); //添加dfs restart button
         controlPanel.add(dfsStart); //添加dfs start button
@@ -162,16 +181,24 @@ public class Maze extends JFrame implements ActionListener {
         controlPanel.add(ellerReStart);
         controlPanel.add(ellerStart);
 
-        /*大小控制面板*/
-        sizeInput.setColumns(10);
+        /*功能面板和大小控制面板*/
+        funcPanel.setLayout(new GridLayout(2, 1));
+        funcPanel.add(typePanel);
+        funcPanel.add(sizePanel);
+        typePanel.setLayout(new GridLayout(1, 3, 40, 0));
+        typePanel.add(DFS);
+        typePanel.add(PRIM);
+        typePanel.add(ELLER);
         sizePanel.setLayout(new FlowLayout());
         sizePanel.add(sizeInput);
         sizePanel.add(sizeButton);
         sizePanel.add(saveImage);
 
+        sizeInput.setColumns(10);
+
         panel.add(controlPanel, BorderLayout.NORTH); //上方加入控制面板
         panel.add(centerPanel, BorderLayout.CENTER); //中心放置迷宫
-        panel.add(sizePanel, BorderLayout.SOUTH);//下方放文本控制
+        panel.add(funcPanel, BorderLayout.SOUTH);
 
         /*增加按钮事件监听*/
         dfsStart.addActionListener(this);
@@ -181,12 +208,11 @@ public class Maze extends JFrame implements ActionListener {
         ellerStart.addActionListener(this);
         ellerReStart.addActionListener(this);
         saveImage.addActionListener(this);
+        sizeButton.addActionListener(this);
     }
 
 
-    /**
-     * 走迷宫
-     */
+    /*走迷宫*/
     private String goMaze(MazeGrid mazeGrid[][], int x, int y) {
         int comeX = 0;
         int comeY = 0;
@@ -245,6 +271,13 @@ public class Maze extends JFrame implements ActionListener {
         mazeGrid[comeX][comeY].repaint();
     }
 
+    private static boolean isNumeric(String str) {
+        if (str != null && !"".equals(str.trim()))
+            return str.matches("^[0-9]*$");
+        else
+            return false;
+    }
+
     private int comeX = 0;
     private int comeY = 0;
 
@@ -255,9 +288,48 @@ public class Maze extends JFrame implements ActionListener {
                 savePic(this.path + "/dfspic.png", "dfs");
                 savePic(this.path + "/primpic.png", "prim");
                 savePic(this.path + "/ellerpic.png", "eller");
-                System.out.println("save image success!");
+                JOptionPane.showMessageDialog(null, "save image success!", "提示", JOptionPane.PLAIN_MESSAGE);
+                System.out.println("保存成功!");
                 break;
             }
+            case "commit": {
+                String text = sizeInput.getText();
+                if (isNumeric(text)) {
+                    int size = Integer.parseInt(text);
+                    if (size % 2 != 0 && size > 0 && size < 40) {
+
+                        setSize(size);
+
+                        dfsReStart.setVisible(false);
+                        dfsStart.setVisible(false);
+                        primReStart.setVisible(false);
+                        primStart.setVisible(false);
+                        ellerReStart.setVisible(false);
+                        ellerStart.setVisible(false);
+
+                        long start = System.currentTimeMillis();
+                        refreshMap("dfs");
+                        refreshMap("prim");
+                        refreshMap("eller");
+                        long end = System.currentTimeMillis();
+                        dfsReStart.setVisible(true);
+                        dfsStart.setVisible(true);
+                        primReStart.setVisible(true);
+                        primStart.setVisible(true);
+                        ellerReStart.setVisible(true);
+                        ellerStart.setVisible(true);
+                        System.out.println("生成3个迷宫总耗时：" + (end - start) + "毫秒");
+                    } else {
+                        JOptionPane.showMessageDialog(null, "请输入小于40的奇正整数！", "提示", JOptionPane.PLAIN_MESSAGE);
+                        sizeInput.setText("");
+                    }
+                    break;
+                } else {
+                    JOptionPane.showMessageDialog(null, "请输入奇正整数！", "提示", JOptionPane.PLAIN_MESSAGE);
+                    break;
+                }
+            }
+
             case "regenerate the dfsMaze": {
                 dfsReStart.setVisible(false);
                 dfsStart.setVisible(false);
@@ -280,34 +352,34 @@ public class Maze extends JFrame implements ActionListener {
             }
             case "dfsStart to explore": {
                 startTime = System.currentTimeMillis();
-                dfsReStart.setText("prohibit to refresh");
                 dfsStart.setVisible(false);
+                dfsReStart.setText("prohibit to refresh");
                 primReStart.setVisible(false);
                 primStart.setVisible(false);
                 ellerReStart.setVisible(false);
                 ellerStart.setVisible(false);
-                int delay = 50; //former:1000
+                int delay = 100; //former:1000
 
-                int period = 25;// former:500 循环间隔
+                int period = 50;// former:500 循环间隔
 
                 java.util.Timer timer = new java.util.Timer();
                 timer.scheduleAtFixedRate(new TimerTask() {
                     public void run() {
                         if (dfsGrid[rows - 1][cols - 1].isPersonCome()) {
                             endTime = System.currentTimeMillis();
-                            JOptionPane.showMessageDialog(null, "已经走出迷宫，耗时"
-                                            + (endTime - startTime) / 1000 + "秒", "消息提示",
+                            JOptionPane.showMessageDialog(null, "走出DFS迷宫耗时："
+                                            + (endTime - startTime) / 1000 + "s(" + (endTime - startTime) + "ms)", "提示",
                                     JOptionPane.ERROR_MESSAGE);
                             centerPanel.setVisible(false);
-                            dfsGrid[0][0].setVisited(true);
+                            dfsGrid[0][0].setVisited();
                             dfsGrid[rows - 1][cols - 1].setPersonCome(false);
                             dfsGrid[0][0].setPersonCome(true);
-                            dfsGrid[0][0].setStart(true);
+                            dfsGrid[0][0].setStart();
 
                             comeX = 0;
                             comeY = 0;
                             willVisit.clear();
-                            visited.clear();
+//                            visited.clear();
                             comed.clear();
 
                             dfsReStart.setText("regenerate the dfsMaze");
@@ -358,35 +430,35 @@ public class Maze extends JFrame implements ActionListener {
                 ellerReStart.setVisible(false);
                 ellerStart.setVisible(false);
 
-                int delay = 50; //former:1000
+                int delay = 100; //former:1000
 
-                int period = 25;// former:500 循环间隔
+                int period = 50;// former:500 循环间隔
 
                 java.util.Timer timer = new java.util.Timer();
                 timer.scheduleAtFixedRate(new TimerTask() {
                     public void run() {
                         if (primGrid[rows - 1][cols - 1].isPersonCome()) {
                             endTime = System.currentTimeMillis();
-                            JOptionPane.showMessageDialog(null, "已经走出迷宫，耗时"
-                                            + (endTime - startTime) / 1000 + "秒", "消息提示",
+                            JOptionPane.showMessageDialog(null, "走出Prim迷宫耗时："
+                                            + (endTime - startTime) / 1000 + "s(" + (endTime - startTime) + "ms)", "提示",
                                     JOptionPane.ERROR_MESSAGE);
 
-                            primGrid[0][0].setVisited(true);
+                            primGrid[0][0].setVisited();
                             primGrid[rows - 1][cols - 1].setPersonCome(false);
                             primGrid[0][0].setPersonCome(true);
-                            primGrid[0][0].setStart(true);
+                            primGrid[0][0].setStart();
 
                             comeX = 0;
                             comeY = 0;
                             willVisit.clear();
-                            visited.clear();
+//                            visited.clear();
                             comed.clear();
 
-                            dfsReStart.setVisible(true);
-                            dfsStart.setVisible(true);
                             primReStart.setText("regenerate the primMaze");
                             primReStart.setVisible(true);
                             primStart.setVisible(true);
+                            dfsReStart.setVisible(true);
+                            dfsStart.setVisible(true);
                             ellerReStart.setVisible(true);
                             ellerStart.setVisible(true);
                             this.cancel();
@@ -428,28 +500,28 @@ public class Maze extends JFrame implements ActionListener {
                 primStart.setVisible(false);
                 ellerReStart.setText("prohibit to refresh");
                 ellerStart.setVisible(false);
-                int delay = 50; //former:1000
+                int delay = 100; //former:1000
 
-                int period = 25;// former:500 循环间隔
+                int period = 50;// former:500 循环间隔
 
                 java.util.Timer timer = new java.util.Timer();
                 timer.scheduleAtFixedRate(new TimerTask() {
                     public void run() {
                         if (ellerGrid[rows - 1][cols - 1].isPersonCome()) {
                             endTime = System.currentTimeMillis();
-                            JOptionPane.showMessageDialog(null, "已经走出迷宫，耗时"
-                                            + (endTime - startTime) / 1000 + "秒", "消息提示",
+                            JOptionPane.showMessageDialog(null, "走出Eller迷宫耗时："
+                                            + (endTime - startTime) / 1000 + "s(" + (endTime - startTime) + "ms)", "提示",
                                     JOptionPane.ERROR_MESSAGE);
 
-                            ellerGrid[0][0].setVisited(true);
+                            ellerGrid[0][0].setVisited();
                             ellerGrid[rows - 1][cols - 1].setPersonCome(false);
                             ellerGrid[0][0].setPersonCome(true);
-                            ellerGrid[0][0].setStart(true);
+                            ellerGrid[0][0].setStart();
 
                             comeX = 0;
                             comeY = 0;
                             willVisit.clear();
-                            visited.clear();
+//                            visited.clear();
                             comed.clear();
 
                             dfsReStart.setVisible(true);
@@ -477,9 +549,9 @@ public class Maze extends JFrame implements ActionListener {
         comeX = 0;
         comeY = 0;
         willVisit.clear();
-        visited.clear();
+//        visited.clear();
         comed.clear();
-        wallList.clear();
+//        wallList.clear();
 
         switch (mazeType) {
             case "dfs":
@@ -534,8 +606,8 @@ public class Maze extends JFrame implements ActionListener {
 
     public static void main(String args[]) {
         long start = System.currentTimeMillis();
-        Maze maze = new Maze();
+        new Maze();
         long end = System.currentTimeMillis();
-        System.out.println("使用ArrayList生成迷宫耗时：" + (end - start) + "毫秒");
+        System.out.println("生成迷宫耗时：" + (end - start) + "毫秒");
     }
 }

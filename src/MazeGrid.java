@@ -1,8 +1,7 @@
+import java.awt.Graphics;
 import java.awt.Canvas;
 import java.awt.Color;
-import java.awt.Graphics;
 
-//方块继承自Canvas(画布)
 public class MazeGrid extends Canvas {
 
     private boolean mark;// 标记是否是通路，TRUE为通路，FALSE为不通  
@@ -11,37 +10,35 @@ public class MazeGrid extends Canvas {
     private boolean isStart;// 判断是否为入口  
     private boolean isEnd;// 判断是否为出口  
 
-    public MazeGrid() {
-        this.setBackground(new Color(120, 0, 0));
-        this.setSize(25, 25);
-    }
-
-    public MazeGrid(boolean mark, int width, int height) { //单个方块图像生成
+    MazeGrid(boolean mark, int width, int height) { //单个方块图像生成
         this.mark = mark;
         this.setSize(width, height);
-        if (mark == true) {
-            this.setBackground(new Color(255, 255, 255)); //通路(mark=true) ：白色
+        if (mark) {
+            this.setBackground(new Color(240, 240, 240)); //通路(mark=true) ：白色
         } else {
-            this.setBackground(new Color(120, 0, 0));     //墙壁(mark=false) ：红色
+            this.setBackground(new Color(240, 240, 240));     //墙壁(mark=false)
         }
     }
 
-    public boolean isMark() {
+    boolean isMark() {
         return mark;
     }
 
-    public void setMark(boolean mark) {
-        this.mark = mark;
+    void setMark() {
+        this.mark = true;
     }
 
     public void paint(Graphics g) {
         if (this.mark) {
-            if (this.isStart || this.isEnd) {
-                this.setBackground(new Color(255, 0, 0));
-            } else
+            if (this.isStart) {
+                this.setBackground(new Color(115, 197, 179));
+            } else if (this.isEnd) {
+                this.setBackground(new Color(230, 141, 155));
+            } else {
                 this.setBackground(new Color(255, 255, 255));
+            }
         } else {
-            this.setBackground(new Color(120, 0, 0));
+            this.setBackground(new Color(155, 155, 155));
         }
         if (this.isPersonCome) {
             g.setColor(Color.BLACK);
@@ -50,35 +47,27 @@ public class MazeGrid extends Canvas {
 
     }
 
-    public boolean isVisited() {
-        return isVisited;
+    boolean noVisited() {
+        return !isVisited;
     }
 
-    public void setVisited(boolean isVisited) {
-        this.isVisited = isVisited;
+    void setVisited() {
+        this.isVisited = true;
     }
 
-    public boolean isPersonCome() {
+    boolean isPersonCome() {
         return isPersonCome;
     }
 
-    public void setPersonCome(boolean isPersonCome) {
+    void setPersonCome(boolean isPersonCome) {
         this.isPersonCome = isPersonCome;
     }
 
-    public boolean isStart() {
-        return isStart;
+    void setStart() {
+        this.isStart = true;
     }
 
-    public void setStart(boolean isStart) {
-        this.isStart = isStart;
-    }
-
-    public boolean isEnd() {
-        return isEnd;
-    }
-
-    public void setEnd(boolean isEnd) {
-        this.isEnd = isEnd;
+    void setEnd() {
+        this.isEnd = true;
     }
 }  

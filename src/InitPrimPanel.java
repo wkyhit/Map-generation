@@ -1,31 +1,26 @@
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class InitPrimPanel {
+class InitPrimPanel {
 
     private MazeGrid primGrid[][];
-    private int rows;
-    private int cols;
-    private List<String> visited;   //保存图中所有已访问过块
-    //    private List<String> willVisit; //保存待访问的当前块的邻接块
-    private List<String> wallList; //prim算法墙链
 
     private JPanel mazePanel;
 
-    public InitPrimPanel(int rows, int cols) {
+    InitPrimPanel(int rows, int cols) {
 
-        this.rows = rows;
-        this.cols = cols;
         primGrid = new MazeGrid[rows][cols];
-        wallList = new LinkedList<>();
-        visited = new ArrayList<>();
+        //    private List<String> willVisit; //保存待访问的当前块的邻接块
+        //prim算法墙链
+        List<String> wallList = new LinkedList<>();
+        //保存图中所有已访问过块
+//        List<String> visited = new ArrayList<>();
 
         mazePanel = new JPanel();
         mazePanel.setLayout(new GridLayout(rows, cols, 1, 1));
-        mazePanel.setBackground(new Color(0, 15, 255));
+        mazePanel.setBackground(new Color(240, 240, 240));
 
         //初始化迷宫图的各单元
         for (int i = 0; i < primGrid.length; i++)
@@ -38,14 +33,14 @@ public class InitPrimPanel {
                 }
             }
 
-        primGrid[0][0].setVisited(true);
+        primGrid[0][0].setVisited();
         primGrid[0][0].setPersonCome(true);
-        primGrid[0][0].setStart(true);
+        primGrid[0][0].setStart();
 
-        visited.add("0#0");
+//        visited.add("0#0");
 
         //初始化出口
-        primGrid[rows - 1][cols - 1].setEnd(true);
+        primGrid[rows - 1][cols - 1].setEnd();
 
         /*Prim生成迷宫*/
         CreatePrimMap primMap = new CreatePrimMap();
@@ -55,21 +50,21 @@ public class InitPrimPanel {
 
         /*prim迷宫打印*/
         for (MazeGrid[] mazeGrids : primGrid) { //foreach 以每行遍历
-            for (int j = 0; j < mazeGrids.length; j++) { //依次遍历每行各个方块
+            for (MazeGrid mazeGrid : mazeGrids) { //依次遍历每行各个方块
 
-                mazeGrids[j].repaint();
-                mazePanel.add(mazeGrids[j]);
+                mazeGrid.repaint();
+                mazePanel.add(mazeGrid);
                 /*原先*/
 //                centerPanel.add(mazeGrids[j]);
             }
         }
     }
 
-    public MazeGrid[][] getMaze() {
+    MazeGrid[][] getMaze() {
         return this.primGrid;
     }
 
-    public JPanel getMazePanel() {
+    JPanel getMazePanel() {
         return this.mazePanel;
     }
 }
